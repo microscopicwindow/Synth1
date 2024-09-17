@@ -11,6 +11,12 @@ let fractalDepth = 3;
 const sampleRate = audioContext.sampleRate;
 const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
 
+// Create a low-pass filter for cutoff and resonance control
+const filter = audioContext.createBiquadFilter();
+filter.type = 'lowpass';
+filter.frequency.value = 2000; // Initial cutoff frequency
+filter.Q.value = 1; // Initial resonance
+
 // Phi Oscillator Process
 phiOscillator.onaudioprocess = (e) => {
     const output = e.outputBuffer.getChannelData(0);
@@ -30,8 +36,8 @@ phiOscillator.onaudioprocess = (e) => {
 const gainNode = audioContext.createGain();
 gainNode.gain.value = 0.2;
 
-// Connect the oscillator to the gain and destination
-phiOscillator.connect(gainNode).connect(audioContext.destination);
+// Connect the oscillator to the filter, then to the gain and destination
+phiOscillator.connect(filter).connect(gainNode).connect(audioContext.destination);
 
 // Start and Stop Buttons
 const startButton = document.getElementById('startButton');
@@ -68,4 +74,16 @@ harmonicIntensitySlider.addEventListener('input', (event) => {
 const fractalDepthSlider = document.getElementById('fractalDepthSlider');
 fractalDepthSlider.addEventListener('input', (event) => {
     fractalDepth = parseInt(event.target.value);
+});
+
+// Cutoff Frequency Control
+const cutoffSlider = document.getElementById('cutoffSlider');
+cutoffSlider.addEventListener('input', (event) => {
+    filter.frequency.value = parseFloat(event.target.value);
+});
+
+// Resonance Control
+const resonanceSlider = document.getElementById('resonanceSlider');
+resonanceSlider.addEventListener('input', (event) => {
+    filter.Q.value = parseFloat(event.target.value);
 });
