@@ -1,46 +1,45 @@
 // Web Audio Context
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-// Create oscillators for blending
-const osc1 = audioContext.createOscillator();
-const osc2 = audioContext.createOscillator();
-const gain1 = audioContext.createGain();
-const gain2 = audioContext.createGain();
+// Create a custom oscillator node
+const phiOscillator = audioContext.createScriptProcessor(256, 1, 1);
+let phase = 0;
+let frequency = 440; // Default frequency set by slider
+const sampleRate = audioContext.sampleRate;
+const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
 
-// Set up oscillators
-osc1.type = 'sine'; // Basic sine wave
-osc2.type = 'sawtooth'; // Sawtooth wave for contrast
+// Phi Oscillator Process
+phiOscillator.onaudioprocess = (e) => {
+    const output = e.outputBuffer.getChannelData(0);
+    for (let i = 0; i < output.length; i++) {
+        // Generate a custom waveform using Phi-modulated sine wave
+        phase += (frequency * Math.pow(phi, i % 2)) / sampleRate;
+        output[i] = Math.sin(phase * 2 * Math.PI) * Math.pow(phi, -i % 5);
+    }
+};
 
-// Connect oscillators to gain nodes
-osc1.connect(gain1).connect(audioContext.destination);
-osc2.connect(gain2).connect(audioContext.destination);
+// Gain Node to control volume
+const gainNode = audioContext.createGain();
+gainNode.gain.value = 0.2;
 
-// Function to handle blending
-function updateBlend(value) {
-    gain1.gain.value = 1 - value; // Osc1 is stronger when slider is low
-    gain2.gain.value = value; // Osc2 is stronger when slider is high
-}
+// Connect the oscillator to the gain and destination
+phiOscillator.connect(gainNode).connect(audioContext.destination);
 
-// Start and Stop Buttons
+// Start Button
 const startButton = document.getElementById('startButton');
-const stopButton = document.getElementById('stopButton');
-
 startButton.addEventListener('click', () => {
-    osc1.start();
-    osc2.start();
+    audioContext.resume();
+    phiOscillator.connect(audioContext.destination);
 });
 
+// Stop Button
+const stopButton = document.getElementById('stopButton');
 stopButton.addEventListener('click', () => {
-    osc1.stop();
-    osc2.stop();
+    phiOscillator.disconnect(audioContext.destination);
 });
 
-// Slider Control
-const blendSlider = document.getElementById('blendSlider');
-blendSlider.addEventListener('input', (event) => {
-    const value = parseFloat(event.target.value);
-    updateBlend(value);
+// Frequency Slider
+const frequencySlider = document.getElementById('frequencySlider');
+frequencySlider.addEventListener('input', (event) => {
+    frequency = parseFloat(event.target.value);
 });
-
-// Initial blend
-updateBlend(0.5); // Start in the middle
