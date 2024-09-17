@@ -15,10 +15,14 @@ const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
 phiOscillator.onaudioprocess = (e) => {
     const output = e.outputBuffer.getChannelData(0);
     for (let i = 0; i < output.length; i++) {
-        // Generate a custom waveform using Phi-modulated sine wave
-        let localPhase = phase * Math.pow(phi, fractalDepth); // Fractal depth influence
-        output[i] = Math.sin(localPhase * 2 * Math.PI * phaseDistortion) * Math.pow(phi, -i % (5 * harmonicIntensity + 1));
-        phase += (frequency * Math.pow(phi, i % 2)) / sampleRate;
+        // Calculate base phase without distortion
+        phase += (frequency / sampleRate) * 2 * Math.PI;
+
+        // Apply phase distortion without altering frequency
+        const distortedPhase = phase + Math.sin(phase * phaseDistortion) * phaseDistortion;
+
+        // Generate the output sample with modified phase
+        output[i] = Math.sin(distortedPhase * Math.pow(phi, fractalDepth)) * Math.pow(phi, -i % (5 * harmonicIntensity + 1));
     }
 };
 
