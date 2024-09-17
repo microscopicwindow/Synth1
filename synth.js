@@ -49,38 +49,19 @@ frequencySlider.addEventListener('input', (event) => {
 });
 
 // Phase Distortion Control
-const phaseDistortionSlider = document.createElement('input');
-phaseDistortionSlider.type = 'range';
-phaseDistortionSlider.min = '0';
-phaseDistortionSlider.max = '2';
-phaseDistortionSlider.step = '0.01';
-phaseDistortionSlider.value = phaseDistortion;
-document.body.appendChild(phaseDistortionSlider);
+const phaseDistortionSlider = document.getElementById('phaseDistortionSlider');
 phaseDistortionSlider.addEventListener('input', (event) => {
     phaseDistortion = parseFloat(event.target.value);
 });
 
 // Harmonic Intensity Control
-const harmonicIntensitySlider = document.createElement('input');
-harmonicIntensitySlider.type = 'range';
-harmonicIntensitySlider.min = '0';
-harmonicIntensitySlider.max = '1';
-harmonicIntensitySlider.step = '0.01';
-harmonicIntensitySlider.value = harmonicIntensity;
-document.body.appendChild(harmonicIntensitySlider);
+const harmonicIntensitySlider = document.getElementById('harmonicIntensitySlider');
 harmonicIntensitySlider.addEventListener('input', (event) => {
     harmonicIntensity = parseFloat(event.target.value);
 });
 
 // Fractal Depth Control
-const fractalDepthSlider = document.createElement('input');
-fractalDepthSlider.type = 'range';
-fractalDepthSlider.min = '1';
-fractalDepthSlider.max = '5';
-fractalDepthSlider.step = '1';
-fractalDepthSlider.value = fractalDepth;
-document.body.appendChild(fractalDepthSlider);
+const fractalDepthSlider = document.getElementById('fractalDepthSlider');
 fractalDepthSlider.addEventListener('input', (event) => {
     fractalDepth = parseInt(event.target.value);
 });
-
