@@ -11,9 +11,28 @@
     <div class="controls">
         <button id="startButton">Start Phi Oscillator</button>
         <button id="stopButton">Stop Phi Oscillator</button>
-        <label for="frequencySlider">Frequency:</label>
-        <input type="range" id="frequencySlider" min="50" max="1000" value="440">
+        
+        <div class="slider-container">
+            <label for="frequencySlider">Frequency:</label>
+            <input type="range" id="frequencySlider" min="50" max="1000" value="440">
+        </div>
+
+        <div class="slider-container">
+            <label for="phaseDistortionSlider">Phase Distortion:</label>
+            <input type="range" id="phaseDistortionSlider" min="0" max="2" step="0.01" value="0.5">
+        </div>
+
+        <div class="slider-container">
+            <label for="harmonicIntensitySlider">Harmonic Intensity:</label>
+            <input type="range" id="harmonicIntensitySlider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+
+        <div class="slider-container">
+            <label for="fractalDepthSlider">Fractal Depth:</label>
+            <input type="range" id="fractalDepthSlider" min="1" max="5" step="1" value="3">
+        </div>
     </div>
+    
     <script src="synth.js"></script>
 </body>
 </html>
