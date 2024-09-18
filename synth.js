@@ -51,7 +51,8 @@ masterGain.connect(wetGain).connect(convolver).connect(audioContext.destination)
 // Load worklet modules and initialize nodes after loading
 async function setupAudioWorklets() {
     try {
-        // Load the granular and pitch shifter processors as audio worklets
+        // Load the oscillator, granular, and pitch shifter processors as audio worklets
+        await audioContext.audioWorklet.addModule('oscillator-processor.js');
         await audioContext.audioWorklet.addModule('granular-processor.js');
         await audioContext.audioWorklet.addModule('pitch-shifter-processor.js');
 
@@ -99,7 +100,7 @@ function setupAudioNodes(index) {
 function startOscillator(index) {
     if (isRunning[index]) return;
 
-    // Create an AudioWorkletNode for each oscillator (using a simple wave generator processor)
+    // Create an AudioWorkletNode for each oscillator using the oscillator processor
     oscillators[index] = new AudioWorkletNode(audioContext, 'oscillator-processor', { outputChannelCount: [1] });
 
     oscillators[index].port.postMessage({
