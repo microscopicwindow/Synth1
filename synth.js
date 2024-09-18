@@ -1,6 +1,15 @@
-// Web Audio Context
+// Web Audio Context and Audio Worklet Setup
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+async function setupAudioWorklets() {
+    // Load the granular and pitch shifter processors as audio worklets
+    await audioContext.audioWorklet.addModule('granular-processor.js');
+    await audioContext.audioWorklet.addModule('pitch-shifter-processor.js');
+}
+
+setupAudioWorklets();
+
+// Initialize state for oscillators
 let oscillators = [null, null, null];
 let isRunning = [false, false, false];
 
@@ -13,7 +22,7 @@ const params = [
 const sampleRate = audioContext.sampleRate;
 const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
 
-// Create a master gain node for all oscillators
+// Create master gain node for all oscillators
 const masterGain = audioContext.createGain();
 masterGain.gain.value = 0.8;
 
@@ -47,32 +56,16 @@ createImpulseResponse(2); // 2 seconds default
 masterGain.connect(dryGain).connect(audioContext.destination);
 masterGain.connect(wetGain).connect(convolver).connect(audioContext.destination);
 
-// Granular Synthesis Setup
-const granularNode = audioContext.createScriptProcessor(1024, 1, 1);
-let grainSize = 0.1;
-let grainDensity = 0.5;
-let grainRandomization = 0;
+// Granular Effect Setup with AudioWorkletNode
+let granularNode = new AudioWorkletNode(audioContext, 'granular-processor');
+granularNode.parameters.get('grainSize').value = 0.1;
+granularNode.parameters.get('grainDensity').value = 0.5;
+granularNode.parameters.get('grainRandomization').value = 0.5;
 
-// Granular processing
-granularNode.onaudioprocess = (e) => {
-    const input = e.inputBuffer.getChannelData(0);
-    const output = e.outputBuffer.getChannelData(0);
-    for (let i = 0; i < output.length; i++) {
-        const pos = Math.floor((i + grainSize * input.length * Math.random()) % input.length);
-        output[i] = input[pos] * Math.random() * grainRandomization;
-    }
-};
-
-// Pitch Shifter Setup
-const pitchShifterNode = audioContext.createDelay();
-pitchShifterNode.delayTime.value = 0.05; // Short delay for pitch shifting
-let pitchShiftAmount = 0;
-let pitchShiftFeedback = 0.5;
-
-// Feedback loop for dynamic pitch shifting
-const feedbackGain = audioContext.createGain();
-feedbackGain.gain.value = pitchShiftFeedback;
-pitchShifterNode.connect(feedbackGain).connect(pitchShifterNode);
+// Pitch Shifter Setup with AudioWorkletNode
+let pitchShifterNode = new AudioWorkletNode(audioContext, 'pitch-shifter-processor');
+pitchShifterNode.parameters.get('pitchShiftAmount').value = 0;
+pitchShifterNode.parameters.get('pitchShiftFeedback').value = 0.5;
 
 // Connect granular and pitch shifter after reverb
 convolver.connect(granularNode).connect(pitchShifterNode).connect(audioContext.destination);
@@ -98,16 +91,15 @@ function setupAudioNodes(index) {
 function startOscillator(index) {
     if (isRunning[index]) return;
 
-    oscillators[index] = audioContext.createScriptProcessor(256, 1, 1);
-    oscillators[index].onaudioprocess = (e) => {
-        const output = e.outputBuffer.getChannelData(0);
-        const { phase, frequency, phaseDistortion, harmonicIntensity, fractalDepth } = params[index];
-        for (let i = 0; i < output.length; i++) {
-            params[index].phase += (frequency / sampleRate) * 2 * Math.PI;
-            const distortedPhase = params[index].phase + Math.sin(params[index].phase * phaseDistortion) * phaseDistortion;
-            output[i] = Math.sin(distortedPhase * Math.pow(phi, fractalDepth)) * Math.pow(phi, -i % (5 * harmonicIntensity + 1));
-        }
-    };
+    // Create an AudioWorkletNode for each oscillator (using a simple wave generator processor)
+    oscillators[index] = new AudioWorkletNode(audioContext, 'oscillator-processor', { outputChannelCount: [1] });
+
+    oscillators[index].port.postMessage({
+        frequency: params[index].frequency,
+        phaseDistortion: params[index].phaseDistortion,
+        harmonicIntensity: params[index].harmonicIntensity,
+        fractalDepth: params[index].fractalDepth,
+    });
 
     oscillators[index].connect(params[index].filter);
     isRunning[index] = true;
@@ -137,18 +129,30 @@ function setupControls(index, prefix) {
 
     document.getElementById(`frequencySlider${prefix}`).addEventListener('input', (event) => {
         params[index].frequency = parseFloat(event.target.value);
+        if (isRunning[index]) {
+            oscillators[index].port.postMessage({ frequency: params[index].frequency });
+        }
     });
 
     document.getElementById(`phaseDistortionSlider${prefix}`).addEventListener('input', (event) => {
         params[index].phaseDistortion = parseFloat(event.target.value);
+        if (isRunning[index]) {
+            oscillators[index].port.postMessage({ phaseDistortion: params[index].phaseDistortion });
+        }
     });
 
     document.getElementById(`harmonicIntensitySlider${prefix}`).addEventListener('input', (event) => {
         params[index].harmonicIntensity = parseFloat(event.target.value);
+        if (isRunning[index]) {
+            oscillators[index].port.postMessage({ harmonicIntensity: params[index].harmonicIntensity });
+        }
     });
 
     document.getElementById(`fractalDepthSlider${prefix}`).addEventListener('input', (event) => {
         params[index].fractalDepth = parseInt(event.target.value);
+        if (isRunning[index]) {
+            oscillators[index].port.postMessage({ fractalDepth: params[index].fractalDepth });
+        }
     });
 
     document.getElementById(`cutoffSlider${prefix}`).addEventListener('input', (event) => {
@@ -177,26 +181,24 @@ document.getElementById('toggleReverbButton').addEventListener('click', () => {
 
 // Setup granular effect controls
 document.getElementById('grainSizeSlider').addEventListener('input', (event) => {
-    grainSize = parseFloat(event.target.value);
+    granularNode.parameters.get('grainSize').value = parseFloat(event.target.value);
 });
 
 document.getElementById('grainDensitySlider').addEventListener('input', (event) => {
-    grainDensity = parseFloat(event.target.value);
+    granularNode.parameters.get('grainDensity').value = parseFloat(event.target.value);
 });
 
 document.getElementById('grainRandomizationSlider').addEventListener('input', (event) => {
-    grainRandomization = parseFloat(event.target.value);
+    granularNode.parameters.get('grainRandomization').value = parseFloat(event.target.value);
 });
 
 // Setup pitch shifter controls
 document.getElementById('pitchShiftAmountSlider').addEventListener('input', (event) => {
-    pitchShiftAmount = parseFloat(event.target.value);
-    pitchShifterNode.delayTime.value = 0.05 + pitchShiftAmount / 100; // Adjust delay time for pitch shift
+    pitchShifterNode.parameters.get('pitchShiftAmount').value = parseFloat(event.target.value);
 });
 
 document.getElementById('pitchShiftFeedbackSlider').addEventListener('input', (event) => {
-    pitchShiftFeedback = parseFloat(event.target.value);
-    feedbackGain.gain.value = pitchShiftFeedback;
+    pitchShifterNode.parameters.get('pitchShiftFeedback').value = parseFloat(event.target.value);
 });
 
 // Setup controls for each oscillator
