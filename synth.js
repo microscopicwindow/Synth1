@@ -34,7 +34,6 @@ function createImpulseResponse(length) {
     for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
         const channelData = impulse.getChannelData(channel);
         for (let i = 0; i < lengthInSamples; i++) {
-            // Generate impulse with exponential decay
             channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / lengthInSamples, 2);
         }
     }
@@ -47,6 +46,36 @@ createImpulseResponse(2); // 2 seconds default
 // Correct reverb routing to prevent feedback
 masterGain.connect(dryGain).connect(audioContext.destination);
 masterGain.connect(wetGain).connect(convolver).connect(audioContext.destination);
+
+// Granular Synthesis Setup
+const granularNode = audioContext.createScriptProcessor(1024, 1, 1);
+let grainSize = 0.1;
+let grainDensity = 0.5;
+let grainRandomization = 0;
+
+// Granular processing
+granularNode.onaudioprocess = (e) => {
+    const input = e.inputBuffer.getChannelData(0);
+    const output = e.outputBuffer.getChannelData(0);
+    for (let i = 0; i < output.length; i++) {
+        const pos = Math.floor((i + grainSize * input.length * Math.random()) % input.length);
+        output[i] = input[pos] * Math.random() * grainRandomization;
+    }
+};
+
+// Pitch Shifter Setup
+const pitchShifterNode = audioContext.createDelay();
+pitchShifterNode.delayTime.value = 0.05; // Short delay for pitch shifting
+let pitchShiftAmount = 0;
+let pitchShiftFeedback = 0.5;
+
+// Feedback loop for dynamic pitch shifting
+const feedbackGain = audioContext.createGain();
+feedbackGain.gain.value = pitchShiftFeedback;
+pitchShifterNode.connect(feedbackGain).connect(pitchShifterNode);
+
+// Connect granular and pitch shifter after reverb
+convolver.connect(granularNode).connect(pitchShifterNode).connect(audioContext.destination);
 
 // Function to create filters and gains for each oscillator
 function setupAudioNodes(index) {
@@ -144,6 +173,30 @@ document.getElementById('reverbLengthSlider').addEventListener('input', (event) 
 document.getElementById('toggleReverbButton').addEventListener('click', () => {
     reverbEnabled = !reverbEnabled;
     wetGain.gain.value = reverbEnabled ? 0.5 : 0; // Toggle reverb effect by adjusting the wet gain
+});
+
+// Setup granular effect controls
+document.getElementById('grainSizeSlider').addEventListener('input', (event) => {
+    grainSize = parseFloat(event.target.value);
+});
+
+document.getElementById('grainDensitySlider').addEventListener('input', (event) => {
+    grainDensity = parseFloat(event.target.value);
+});
+
+document.getElementById('grainRandomizationSlider').addEventListener('input', (event) => {
+    grainRandomization = parseFloat(event.target.value);
+});
+
+// Setup pitch shifter controls
+document.getElementById('pitchShiftAmountSlider').addEventListener('input', (event) => {
+    pitchShiftAmount = parseFloat(event.target.value);
+    pitchShifterNode.delayTime.value = 0.05 + pitchShiftAmount / 100; // Adjust delay time for pitch shift
+});
+
+document.getElementById('pitchShiftFeedbackSlider').addEventListener('input', (event) => {
+    pitchShiftFeedback = parseFloat(event.target.value);
+    feedbackGain.gain.value = pitchShiftFeedback;
 });
 
 // Setup controls for each oscillator
