@@ -22,17 +22,30 @@ masterGain.connect(audioContext.destination);
 const convolver = audioContext.createConvolver();
 const reverbGain = audioContext.createGain();
 reverbGain.gain.value = 0.5; // Initial mix value
+let reverbEnabled = false;
 
-// Load an impulse response for the reverb
-fetch('https://example.com/impulse-response.wav')
-    .then(response => response.arrayBuffer())
-    .then(data => audioContext.decodeAudioData(data, buffer => {
-        convolver.buffer = buffer;
-    }));
+// Function to create an impulse response based on length
+function createImpulseResponse(length) {
+    const sampleRate = audioContext.sampleRate;
+    const lengthInSamples = sampleRate * length;
+    const impulse = audioContext.createBuffer(2, lengthInSamples, sampleRate);
+    for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < lengthInSamples; i++) {
+            // Simple exponential decay
+            channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / lengthInSamples, 2);
+        }
+    }
+    convolver.buffer = impulse;
+}
+
+// Set initial impulse response length
+createImpulseResponse(2); // 2 seconds by default
 
 // Connect reverb to master output
-masterGain.connect(convolver);
-convolver.connect(reverbGain).connect(audioContext.destination);
+masterGain.connect(reverbGain).connect(audioContext.destination);
+reverbGain.connect(convolver);
+convolver.connect(reverbGain);
 
 // Function to create filters and gains for each oscillator
 function setupAudioNodes(index) {
@@ -121,12 +134,13 @@ document.getElementById('reverbMixSlider').addEventListener('input', (event) => 
     reverbGain.gain.value = parseFloat(event.target.value);
 });
 
+document.getElementById('reverbLengthSlider').addEventListener('input', (event) => {
+    createImpulseResponse(parseFloat(event.target.value));
+});
+
 document.getElementById('toggleReverbButton').addEventListener('click', () => {
-    if (masterGain.connect(convolver)) {
-        convolver.disconnect();
-    } else {
-        masterGain.connect(convolver);
-    }
+    reverbEnabled = !reverbEnabled;
+    reverbGain.gain.value = reverbEnabled ? 0.5 : 0;
 });
 
 // Setup controls for each oscillator
