@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Phi Oscillator Synth - 3 Oscillators with Reverb</h1>
+    <h1>Phi Oscillator Synth - 3 Oscillators with Granular and Pitch Shift Effects</h1>
 
     <!-- Controls for Oscillator 1 -->
     <div class="oscillator-container">
@@ -113,6 +113,36 @@
         <div class="slider-container">
             <label for="reverbLengthSlider">Reverb Length:</label>
             <input type="range" id="reverbLengthSlider" min="0.1" max="5" step="0.1" value="2">
+        </div>
+    </div>
+
+    <!-- Granular Effect Controls -->
+    <div class="effect-container">
+        <h2>Granular Effect Controls</h2>
+        <div class="slider-container">
+            <label for="grainSizeSlider">Grain Size:</label>
+            <input type="range" id="grainSizeSlider" min="0.01" max="0.5" step="0.01" value="0.1">
+        </div>
+        <div class="slider-container">
+            <label for="grainDensitySlider">Grain Density:</label>
+            <input type="range" id="grainDensitySlider" min="0.1" max="1" step="0.01" value="0.5">
+        </div>
+        <div class="slider-container">
+            <label for="grainRandomizationSlider">Grain Randomization:</label>
+            <input type="range" id="grainRandomizationSlider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+    </div>
+
+    <!-- Pitch Shifter Controls -->
+    <div class="effect-container">
+        <h2>Pitch Shifter Controls</h2>
+        <div class="slider-container">
+            <label for="pitchShiftAmountSlider">Pitch Shift Amount:</label>
+            <input type="range" id="pitchShiftAmountSlider" min="-12" max="12" step="1" value="0">
+        </div>
+        <div class="slider-container">
+            <label for="pitchShiftFeedbackSlider">Pitch Shift Feedback:</label>
+            <input type="range" id="pitchShiftFeedbackSlider" min="0" max="0.95" step="0.05" value="0.5">
         </div>
     </div>
 
