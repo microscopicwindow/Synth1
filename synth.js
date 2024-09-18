@@ -58,13 +58,21 @@ async function setupAudioWorklets() {
         await audioContext.audioWorklet.addModule('pitch-shifter-processor.js');
 
         // Setup Granular Effect with AudioWorkletNode
-        const granularNode = new AudioWorkletNode(audioContext, 'granular-processor');
+        const granularNode = new AudioWorkletNode(audioContext, 'granular-processor', {
+            outputChannelCount: [2],  // Stereo output
+            channelCount: 2,
+            channelCountMode: 'explicit',
+        });
         granularNode.parameters.get('grainSize').value = 0.1;
         granularNode.parameters.get('grainDensity').value = 0.5;
         granularNode.parameters.get('grainRandomization').value = 0.5;
 
         // Setup Pitch Shifter with AudioWorkletNode
-        const pitchShifterNode = new AudioWorkletNode(audioContext, 'pitch-shifter-processor');
+        const pitchShifterNode = new AudioWorkletNode(audioContext, 'pitch-shifter-processor', {
+            outputChannelCount: [2],  // Stereo output
+            channelCount: 2,
+            channelCountMode: 'explicit',
+        });
         pitchShifterNode.parameters.get('pitchShiftAmount').value = 0;
         pitchShifterNode.parameters.get('pitchShiftFeedback').value = 0.5;
 
@@ -102,7 +110,11 @@ function startOscillator(index) {
     if (isRunning[index]) return;
 
     // Create an AudioWorkletNode for each oscillator using the oscillator processor
-    oscillators[index] = new AudioWorkletNode(audioContext, 'oscillator-processor', { outputChannelCount: [2] }); // Stereo output
+    oscillators[index] = new AudioWorkletNode(audioContext, 'oscillator-processor', {
+        outputChannelCount: [2],  // Stereo output
+        channelCount: 2,
+        channelCountMode: 'explicit',
+    });
 
     oscillators[index].port.postMessage({
         frequency: params[index].frequency,
