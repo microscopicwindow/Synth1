@@ -1,112 +1,100 @@
 // Web Audio Context
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-// Variables to track the oscillator state
-let phiOscillator;
-let isOscillatorRunning = false;
+let oscillators = [null, null, null];
+let isRunning = [false, false, false];
 
-let phase = 0;
-let frequency = 440; // Default frequency set by slider
-let phaseDistortion = 0.5;
-let harmonicIntensity = 0.5;
-let fractalDepth = 3;
+const params = [
+    { phase: 0, frequency: 440, phaseDistortion: 0.5, harmonicIntensity: 0.5, fractalDepth: 3, filter: null, gain: null },
+    { phase: 0, frequency: 440, phaseDistortion: 0.5, harmonicIntensity: 0.5, fractalDepth: 3, filter: null, gain: null },
+    { phase: 0, frequency: 440, phaseDistortion: 0.5, harmonicIntensity: 0.5, fractalDepth: 3, filter: null, gain: null },
+];
+
 const sampleRate = audioContext.sampleRate;
 const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
 
-// Create a low-pass filter for cutoff and resonance control
-const filter = audioContext.createBiquadFilter();
-filter.type = 'lowpass';
-filter.frequency.value = 2000; // Initial cutoff frequency
-filter.Q.value = 1; // Initial resonance
+// Function to create filters and gains for each oscillator
+function setupAudioNodes(index) {
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+    filter.Q.value = 1;
 
-// Gain Node to control volume
-const gainNode = audioContext.createGain();
-gainNode.gain.value = 0.2;
+    const gain = audioContext.createGain();
+    gain.gain.value = 0.2;
 
-// Function to start the Phi Oscillator
-function startPhiOscillator() {
-    if (isOscillatorRunning) return; // Prevent starting again if already running
+    params[index].filter = filter;
+    params[index].gain = gain;
 
-    // Create the oscillator node
-    phiOscillator = audioContext.createScriptProcessor(256, 1, 1);
+    filter.connect(gain).connect(audioContext.destination);
+}
 
-    // Define the audio process
-    phiOscillator.onaudioprocess = (e) => {
+// Function to start an oscillator
+function startOscillator(index) {
+    if (isRunning[index]) return;
+
+    oscillators[index] = audioContext.createScriptProcessor(256, 1, 1);
+    oscillators[index].onaudioprocess = (e) => {
         const output = e.outputBuffer.getChannelData(0);
+        const { phase, frequency, phaseDistortion, harmonicIntensity, fractalDepth } = params[index];
         for (let i = 0; i < output.length; i++) {
-            // Calculate base phase without distortion
-            phase += (frequency / sampleRate) * 2 * Math.PI;
-
-            // Apply phase distortion without altering frequency
-            const distortedPhase = phase + Math.sin(phase * phaseDistortion) * phaseDistortion;
-
-            // Generate the output sample with modified phase
+            params[index].phase += (frequency / sampleRate) * 2 * Math.PI;
+            const distortedPhase = params[index].phase + Math.sin(params[index].phase * phaseDistortion) * phaseDistortion;
             output[i] = Math.sin(distortedPhase * Math.pow(phi, fractalDepth)) * Math.pow(phi, -i % (5 * harmonicIntensity + 1));
         }
     };
 
-    // Connect the oscillator to the filter, then to the gain and destination
-    phiOscillator.connect(filter).connect(gainNode).connect(audioContext.destination);
-
-    isOscillatorRunning = true; // Set the flag to indicate the oscillator is running
+    oscillators[index].connect(params[index].filter);
+    isRunning[index] = true;
 }
 
-// Function to stop the Phi Oscillator
-function stopPhiOscillator() {
-    if (!isOscillatorRunning) return; // Prevent stopping if not running
-
-    // Disconnect and close the oscillator
-    phiOscillator.disconnect();
-    phiOscillator = null;
-
-    isOscillatorRunning = false; // Reset the running flag
+// Function to stop an oscillator
+function stopOscillator(index) {
+    if (!isRunning[index]) return;
+    oscillators[index].disconnect();
+    oscillators[index] = null;
+    isRunning[index] = false;
 }
 
-// Start and Stop Buttons
-const startButton = document.getElementById('startButton');
-const stopButton = document.getElementById('stopButton');
+// Setup and bind controls for each oscillator
+function setupControls(index, prefix) {
+    setupAudioNodes(index);
 
-startButton.addEventListener('click', () => {
-    audioContext.resume();
-    startPhiOscillator();
-});
+    document.getElementById(`startButton${prefix}`).addEventListener('click', () => {
+        audioContext.resume();
+        startOscillator(index);
+    });
 
-stopButton.addEventListener('click', () => {
-    stopPhiOscillator();
-});
+    document.getElementById(`stopButton${prefix}`).addEventListener('click', () => {
+        stopOscillator(index);
+    });
 
-// Frequency Control
-const frequencySlider = document.getElementById('frequencySlider');
-frequencySlider.addEventListener('input', (event) => {
-    frequency = parseFloat(event.target.value);
-});
+    document.getElementById(`frequencySlider${prefix}`).addEventListener('input', (event) => {
+        params[index].frequency = parseFloat(event.target.value);
+    });
 
-// Phase Distortion Control
-const phaseDistortionSlider = document.getElementById('phaseDistortionSlider');
-phaseDistortionSlider.addEventListener('input', (event) => {
-    phaseDistortion = parseFloat(event.target.value);
-});
+    document.getElementById(`phaseDistortionSlider${prefix}`).addEventListener('input', (event) => {
+        params[index].phaseDistortion = parseFloat(event.target.value);
+    });
 
-// Harmonic Intensity Control
-const harmonicIntensitySlider = document.getElementById('harmonicIntensitySlider');
-harmonicIntensitySlider.addEventListener('input', (event) => {
-    harmonicIntensity = parseFloat(event.target.value);
-});
+    document.getElementById(`harmonicIntensitySlider${prefix}`).addEventListener('input', (event) => {
+        params[index].harmonicIntensity = parseFloat(event.target.value);
+    });
 
-// Fractal Depth Control
-const fractalDepthSlider = document.getElementById('fractalDepthSlider');
-fractalDepthSlider.addEventListener('input', (event) => {
-    fractalDepth = parseInt(event.target.value);
-});
+    document.getElementById(`fractalDepthSlider${prefix}`).addEventListener('input', (event) => {
+        params[index].fractalDepth = parseInt(event.target.value);
+    });
 
-// Cutoff Frequency Control
-const cutoffSlider = document.getElementById('cutoffSlider');
-cutoffSlider.addEventListener('input', (event) => {
-    filter.frequency.value = parseFloat(event.target.value);
-});
+    document.getElementById(`cutoffSlider${prefix}`).addEventListener('input', (event) => {
+        params[index].filter.frequency.value = parseFloat(event.target.value);
+    });
 
-// Resonance Control
-const resonanceSlider = document.getElementById('resonanceSlider');
-resonanceSlider.addEventListener('input', (event) => {
-    filter.Q.value = parseFloat(event.target.value);
-});
+    document.getElementById(`resonanceSlider${prefix}`).addEventListener('input', (event) => {
+        params[index].filter.Q.value = parseFloat(event.target.value);
+    });
+}
+
+// Setup controls for each oscillator
+setupControls(0, '1');
+setupControls(1, '2');
+setupControls(2, '3');
