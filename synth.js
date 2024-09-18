@@ -16,23 +16,25 @@ const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
 // Create a master gain node for all oscillators
 const masterGain = audioContext.createGain();
 masterGain.gain.value = 0.8;
-masterGain.connect(audioContext.destination);
 
-// Reverb setup
+// Separate dry and wet gain nodes for reverb mix
+const dryGain = audioContext.createGain();
+const wetGain = audioContext.createGain();
+dryGain.gain.value = 1; // Full dry by default
+wetGain.gain.value = 0.5; // Initial wet value
+
+// Reverb setup with convolver
 const convolver = audioContext.createConvolver();
-const reverbGain = audioContext.createGain();
-reverbGain.gain.value = 0.5; // Initial mix value
 let reverbEnabled = false;
 
 // Function to create an impulse response based on length
 function createImpulseResponse(length) {
-    const sampleRate = audioContext.sampleRate;
-    const lengthInSamples = sampleRate * length;
-    const impulse = audioContext.createBuffer(2, lengthInSamples, sampleRate);
+    const lengthInSamples = audioContext.sampleRate * length;
+    const impulse = audioContext.createBuffer(2, lengthInSamples, audioContext.sampleRate);
     for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
         const channelData = impulse.getChannelData(channel);
         for (let i = 0; i < lengthInSamples; i++) {
-            // Simple exponential decay
+            // Generate impulse with exponential decay
             channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / lengthInSamples, 2);
         }
     }
@@ -40,12 +42,11 @@ function createImpulseResponse(length) {
 }
 
 // Set initial impulse response length
-createImpulseResponse(2); // 2 seconds by default
+createImpulseResponse(2); // 2 seconds default
 
-// Connect reverb to master output
-masterGain.connect(reverbGain).connect(audioContext.destination);
-reverbGain.connect(convolver);
-convolver.connect(reverbGain);
+// Correct reverb routing to prevent feedback
+masterGain.connect(dryGain).connect(audioContext.destination);
+masterGain.connect(wetGain).connect(convolver).connect(audioContext.destination);
 
 // Function to create filters and gains for each oscillator
 function setupAudioNodes(index) {
@@ -60,6 +61,7 @@ function setupAudioNodes(index) {
     params[index].filter = filter;
     params[index].gain = gain;
 
+    // Connect each oscillator to the master gain
     filter.connect(gain).connect(masterGain);
 }
 
@@ -131,7 +133,8 @@ function setupControls(index, prefix) {
 
 // Setup reverb controls
 document.getElementById('reverbMixSlider').addEventListener('input', (event) => {
-    reverbGain.gain.value = parseFloat(event.target.value);
+    wetGain.gain.value = parseFloat(event.target.value); // Adjust wet level
+    dryGain.gain.value = 1 - wetGain.gain.value; // Adjust dry level to complement
 });
 
 document.getElementById('reverbLengthSlider').addEventListener('input', (event) => {
@@ -140,7 +143,7 @@ document.getElementById('reverbLengthSlider').addEventListener('input', (event) 
 
 document.getElementById('toggleReverbButton').addEventListener('click', () => {
     reverbEnabled = !reverbEnabled;
-    reverbGain.gain.value = reverbEnabled ? 0.5 : 0;
+    wetGain.gain.value = reverbEnabled ? 0.5 : 0; // Toggle reverb effect by adjusting the wet gain
 });
 
 // Setup controls for each oscillator
