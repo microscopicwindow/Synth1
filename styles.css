@@ -3,7 +3,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 50px;
+    margin-top: 20px;
     background-color: #f4f4f9;
 }
 
@@ -12,22 +12,29 @@ h1 {
     color: #333;
 }
 
-.controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
+.oscillator-container {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    width: 350px;
+    background-color: #fff;
+}
+
+h2 {
+    color: #555;
 }
 
 button {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 14px;
     border: none;
     background-color: #4caf50;
     color: white;
     cursor: pointer;
     border-radius: 5px;
     transition: background-color 0.3s;
+    margin-bottom: 10px;
 }
 
 button:hover {
@@ -38,6 +45,7 @@ button:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-bottom: 10px;
 }
 
 label {
@@ -47,8 +55,7 @@ label {
 }
 
 input[type="range"] {
-    width: 300px;
-    margin-bottom: 10px;
+    width: 100%;
 }
 
 input[type="range"]::-webkit-slider-thumb {
