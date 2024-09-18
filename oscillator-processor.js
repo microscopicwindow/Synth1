@@ -19,12 +19,17 @@ class OscillatorProcessor extends AudioWorkletProcessor {
     }
 
     process(inputs, outputs) {
-        const output = outputs[0][0];
-        for (let i = 0; i < output.length; i++) {
+        const outputL = outputs[0][0]; // Left channel
+        const outputR = outputs[0][1]; // Right channel
+        for (let i = 0; i < outputL.length; i++) {
             this.phase += (this.frequency / sampleRate) * 2 * Math.PI;
             const distortedPhase = this.phase + Math.sin(this.phase * this.phaseDistortion) * this.phaseDistortion;
-            // Use this.phi instead of phi to reference the golden ratio
-            output[i] = Math.sin(distortedPhase * Math.pow(this.phi, this.fractalDepth)) * Math.pow(this.phi, -i % (5 * this.harmonicIntensity + 1));
+
+            // Generate the same signal for left and right channels
+            const sample = Math.sin(distortedPhase * Math.pow(this.phi, this.fractalDepth)) * Math.pow(this.phi, -i % (5 * this.harmonicIntensity + 1));
+
+            outputL[i] = sample;  // Left channel
+            outputR[i] = sample;  // Right channel (same as left for now)
         }
         return true;
     }
