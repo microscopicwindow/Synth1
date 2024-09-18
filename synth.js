@@ -18,40 +18,41 @@ const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
 const masterGain = audioContext.createGain();
 masterGain.gain.value = 0.8;
 
-// Separate dry and wet gain nodes for reverb mix
+// Reverb mix (dry and wet) setup
 const dryGain = audioContext.createGain();
 const wetGain = audioContext.createGain();
-dryGain.gain.value = 1; // Full dry by default
-wetGain.gain.value = 0.5; // Initial wet value
+dryGain.gain.value = 1;
+wetGain.gain.value = 0.5;
 
 // Reverb setup with convolver
 const convolver = audioContext.createConvolver();
 let reverbEnabled = false;
 
-// Function to create an impulse response based on length
+// Function to create an impulse response for the reverb effect
 function createImpulseResponse(length) {
     const lengthInSamples = audioContext.sampleRate * length;
-    const impulse = audioContext.createBuffer(2, lengthInSamples, audioContext.sampleRate);
+    const impulse = audioContext.createBuffer(2, lengthInSamples, audioContext.sampleRate); // Stereo buffer
     for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
         const channelData = impulse.getChannelData(channel);
         for (let i = 0; i < lengthInSamples; i++) {
-            channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / lengthInSamples, 2);
+            channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / lengthInSamples, 2); // Exponential decay
         }
     }
     convolver.buffer = impulse;
 }
 
-// Set initial impulse response length
-createImpulseResponse(2); // 2 seconds default
+// Set initial impulse response length for reverb
+createImpulseResponse(2);
 
-// Correct reverb routing to prevent feedback
-masterGain.connect(dryGain).connect(audioContext.destination);
-masterGain.connect(wetGain).connect(convolver).connect(audioContext.destination);
+// Properly connect dry and wet reverb mix to the master gain
+masterGain.connect(dryGain).connect(audioContext.destination); // Dry path directly to destination
+masterGain.connect(wetGain).connect(convolver); // Wet path through convolver
+convolver.connect(audioContext.destination); // Convolver output to destination
 
 // Load worklet modules and initialize nodes after loading
 async function setupAudioWorklets() {
     try {
-        // Load the oscillator, granular, and pitch shifter processors as audio worklets
+        // Load the oscillator, granular, and pitch shifter processors
         await audioContext.audioWorklet.addModule('oscillator-processor.js');
         await audioContext.audioWorklet.addModule('granular-processor.js');
         await audioContext.audioWorklet.addModule('pitch-shifter-processor.js');
@@ -67,10 +68,10 @@ async function setupAudioWorklets() {
         pitchShifterNode.parameters.get('pitchShiftAmount').value = 0;
         pitchShifterNode.parameters.get('pitchShiftFeedback').value = 0.5;
 
-        // Connect granular and pitch shifter after reverb
+        // Serial chain: convolver → granularNode → pitchShifterNode → audio destination
         convolver.connect(granularNode).connect(pitchShifterNode).connect(audioContext.destination);
 
-        // Attach event listeners for the granular effect and pitch shifter controls
+        // Attach event listeners for granular and pitch shifter controls
         setupEffectControls(granularNode, pitchShifterNode);
     } catch (error) {
         console.error('Error loading audio worklet modules:', error);
@@ -101,7 +102,7 @@ function startOscillator(index) {
     if (isRunning[index]) return;
 
     // Create an AudioWorkletNode for each oscillator using the oscillator processor
-    oscillators[index] = new AudioWorkletNode(audioContext, 'oscillator-processor', { outputChannelCount: [1] });
+    oscillators[index] = new AudioWorkletNode(audioContext, 'oscillator-processor', { outputChannelCount: [2] }); // Stereo output
 
     oscillators[index].port.postMessage({
         frequency: params[index].frequency,
