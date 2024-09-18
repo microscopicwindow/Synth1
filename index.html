@@ -1,117 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phi Oscillator Synth</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <h1>Phi Oscillator Synth - 3 Oscillators with Reverb</h1>
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    background-color: #f4f4f9;
+}
 
-    <!-- Controls for Oscillator 1 -->
-    <div class="oscillator-container">
-        <h2>Oscillator 1</h2>
-        <button id="startButton1">Start Oscillator 1</button>
-        <button id="stopButton1">Stop Oscillator 1</button>
-        <div class="slider-container">
-            <label for="frequencySlider1">Frequency:</label>
-            <input type="range" id="frequencySlider1" min="20" max="2000" value="440">
-        </div>
-        <div class="slider-container">
-            <label for="phaseDistortionSlider1">Phase Distortion:</label>
-            <input type="range" id="phaseDistortionSlider1" min="0" max="5" step="0.01" value="0.5">
-        </div>
-        <div class="slider-container">
-            <label for="harmonicIntensitySlider1">Harmonic Intensity:</label>
-            <input type="range" id="harmonicIntensitySlider1" min="0" max="2" step="0.01" value="0.5">
-        </div>
-        <div class="slider-container">
-            <label for="fractalDepthSlider1">Fractal Depth:</label>
-            <input type="range" id="fractalDepthSlider1" min="1" max="10" step="1" value="3">
-        </div>
-        <div class="slider-container">
-            <label for="cutoffSlider1">Cutoff Frequency:</label>
-            <input type="range" id="cutoffSlider1" min="20" max="20000" value="2000">
-        </div>
-        <div class="slider-container">
-            <label for="resonanceSlider1">Resonance:</label>
-            <input type="range" id="resonanceSlider1" min="0" max="20" step="0.1" value="1">
-        </div>
-    </div>
+h1 {
+    margin-bottom: 20px;
+    color: #333;
+}
 
-    <!-- Controls for Oscillator 2 -->
-    <div class="oscillator-container">
-        <h2>Oscillator 2</h2>
-        <button id="startButton2">Start Oscillator 2</button>
-        <button id="stopButton2">Stop Oscillator 2</button>
-        <div class="slider-container">
-            <label for="frequencySlider2">Frequency:</label>
-            <input type="range" id="frequencySlider2" min="20" max="2000" value="440">
-        </div>
-        <div class="slider-container">
-            <label for="phaseDistortionSlider2">Phase Distortion:</label>
-            <input type="range" id="phaseDistortionSlider2" min="0" max="5" step="0.01" value="0.5">
-        </div>
-        <div class="slider-container">
-            <label for="harmonicIntensitySlider2">Harmonic Intensity:</label>
-            <input type="range" id="harmonicIntensitySlider2" min="0" max="2" step="0.01" value="0.5">
-        </div>
-        <div class="slider-container">
-            <label for="fractalDepthSlider2">Fractal Depth:</label>
-            <input type="range" id="fractalDepthSlider2" min="1" max="10" step="1" value="3">
-        </div>
-        <div class="slider-container">
-            <label for="cutoffSlider2">Cutoff Frequency:</label>
-            <input type="range" id="cutoffSlider2" min="20" max="20000" value="2000">
-        </div>
-        <div class="slider-container">
-            <label for="resonanceSlider2">Resonance:</label>
-            <input type="range" id="resonanceSlider2" min="0" max="20" step="0.1" value="1">
-        </div>
-    </div>
+.oscillator-container, .reverb-container {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    width: 350px;
+    background-color: #fff;
+}
 
-    <!-- Controls for Oscillator 3 -->
-    <div class="oscillator-container">
-        <h2>Oscillator 3</h2>
-        <button id="startButton3">Start Oscillator 3</button>
-        <button id="stopButton3">Stop Oscillator 3</button>
-        <div class="slider-container">
-            <label for="frequencySlider3">Frequency:</label>
-            <input type="range" id="frequencySlider3" min="20" max="2000" value="440">
-        </div>
-        <div class="slider-container">
-            <label for="phaseDistortionSlider3">Phase Distortion:</label>
-            <input type="range" id="phaseDistortionSlider3" min="0" max="5" step="0.01" value="0.5">
-        </div>
-        <div class="slider-container">
-            <label for="harmonicIntensitySlider3">Harmonic Intensity:</label>
-            <input type="range" id="harmonicIntensitySlider3" min="0" max="2" step="0.01" value="0.5">
-        </div>
-        <div class="slider-container">
-            <label for="fractalDepthSlider3">Fractal Depth:</label>
-            <input type="range" id="fractalDepthSlider3" min="1" max="10" step="1" value="3">
-        </div>
-        <div class="slider-container">
-            <label for="cutoffSlider3">Cutoff Frequency:</label>
-            <input type="range" id="cutoffSlider3" min="20" max="20000" value="2000">
-        </div>
-        <div class="slider-container">
-            <label for="resonanceSlider3">Resonance:</label>
-            <input type="range" id="resonanceSlider3" min="0" max="20" step="0.1" value="1">
-        </div>
-    </div>
+h2 {
+    color: #555;
+}
 
-    <!-- Reverb Controls -->
-    <div class="reverb-container">
-        <h2>Reverb Controls</h2>
-        <button id="toggleReverbButton">Toggle Reverb</button>
-        <div class="slider-container">
-            <label for="reverbMixSlider">Reverb Mix:</label>
-            <input type="range" id="reverbMixSlider" min="0" max="1" step="0.01" value="0.5">
-        </div>
-    </div>
+button {
+    padding: 10px 20px;
+    font-size: 14px;
+    border: none;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    margin-bottom: 10px;
+}
 
-    <script src="synth.js"></script>
-</body>
-</html>
+button:hover {
+    background-color: #45a049;
+}
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    background: #4
