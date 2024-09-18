@@ -7,6 +7,9 @@ class OscillatorProcessor extends AudioWorkletProcessor {
         this.harmonicIntensity = 0.5;
         this.fractalDepth = 3;
 
+        // Define the golden ratio (phi) inside the processor scope
+        this.phi = (1 + Math.sqrt(5)) / 2;
+
         this.port.onmessage = (event) => {
             if (event.data.frequency !== undefined) this.frequency = event.data.frequency;
             if (event.data.phaseDistortion !== undefined) this.phaseDistortion = event.data.phaseDistortion;
@@ -20,7 +23,8 @@ class OscillatorProcessor extends AudioWorkletProcessor {
         for (let i = 0; i < output.length; i++) {
             this.phase += (this.frequency / sampleRate) * 2 * Math.PI;
             const distortedPhase = this.phase + Math.sin(this.phase * this.phaseDistortion) * this.phaseDistortion;
-            output[i] = Math.sin(distortedPhase * Math.pow(phi, this.fractalDepth)) * Math.pow(phi, -i % (5 * this.harmonicIntensity + 1));
+            // Use this.phi instead of phi to reference the golden ratio
+            output[i] = Math.sin(distortedPhase * Math.pow(this.phi, this.fractalDepth)) * Math.pow(this.phi, -i % (5 * this.harmonicIntensity + 1));
         }
         return true;
     }
