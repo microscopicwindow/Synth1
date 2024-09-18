@@ -53,9 +53,9 @@ convolver.connect(audioContext.destination); // Convolver output to destination
 async function setupAudioWorklets() {
     try {
         // Load the oscillator, granular, and pitch shifter processors
-        await audioContext.audioWorklet.addModule('oscillator-processor.js');
-        await audioContext.audioWorklet.addModule('granular-processor.js');
-        await audioContext.audioWorklet.addModule('pitch-shifter-processor.js');
+        await audioContext.audioWorklet.addModule('oscillator-processor.js?nocache=' + Math.random());
+        await audioContext.audioWorklet.addModule('granular-processor.js?nocache=' + Math.random());
+        await audioContext.audioWorklet.addModule('pitch-shifter-processor.js?nocache=' + Math.random());
 
         // Setup Granular Effect with AudioWorkletNode
         const granularNode = new AudioWorkletNode(audioContext, 'granular-processor', {
