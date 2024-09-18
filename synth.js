@@ -1,8 +1,10 @@
 // Web Audio Context
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-// Create a custom oscillator node
-const phiOscillator = audioContext.createScriptProcessor(256, 1, 1);
+// Variables to track the oscillator state
+let phiOscillator;
+let isOscillatorRunning = false;
+
 let phase = 0;
 let frequency = 440; // Default frequency set by slider
 let phaseDistortion = 0.5;
@@ -17,27 +19,48 @@ filter.type = 'lowpass';
 filter.frequency.value = 2000; // Initial cutoff frequency
 filter.Q.value = 1; // Initial resonance
 
-// Phi Oscillator Process
-phiOscillator.onaudioprocess = (e) => {
-    const output = e.outputBuffer.getChannelData(0);
-    for (let i = 0; i < output.length; i++) {
-        // Calculate base phase without distortion
-        phase += (frequency / sampleRate) * 2 * Math.PI;
-
-        // Apply phase distortion without altering frequency
-        const distortedPhase = phase + Math.sin(phase * phaseDistortion) * phaseDistortion;
-
-        // Generate the output sample with modified phase
-        output[i] = Math.sin(distortedPhase * Math.pow(phi, fractalDepth)) * Math.pow(phi, -i % (5 * harmonicIntensity + 1));
-    }
-};
-
 // Gain Node to control volume
 const gainNode = audioContext.createGain();
 gainNode.gain.value = 0.2;
 
-// Connect the oscillator to the filter, then to the gain and destination
-phiOscillator.connect(filter).connect(gainNode).connect(audioContext.destination);
+// Function to start the Phi Oscillator
+function startPhiOscillator() {
+    if (isOscillatorRunning) return; // Prevent starting again if already running
+
+    // Create the oscillator node
+    phiOscillator = audioContext.createScriptProcessor(256, 1, 1);
+
+    // Define the audio process
+    phiOscillator.onaudioprocess = (e) => {
+        const output = e.outputBuffer.getChannelData(0);
+        for (let i = 0; i < output.length; i++) {
+            // Calculate base phase without distortion
+            phase += (frequency / sampleRate) * 2 * Math.PI;
+
+            // Apply phase distortion without altering frequency
+            const distortedPhase = phase + Math.sin(phase * phaseDistortion) * phaseDistortion;
+
+            // Generate the output sample with modified phase
+            output[i] = Math.sin(distortedPhase * Math.pow(phi, fractalDepth)) * Math.pow(phi, -i % (5 * harmonicIntensity + 1));
+        }
+    };
+
+    // Connect the oscillator to the filter, then to the gain and destination
+    phiOscillator.connect(filter).connect(gainNode).connect(audioContext.destination);
+
+    isOscillatorRunning = true; // Set the flag to indicate the oscillator is running
+}
+
+// Function to stop the Phi Oscillator
+function stopPhiOscillator() {
+    if (!isOscillatorRunning) return; // Prevent stopping if not running
+
+    // Disconnect and close the oscillator
+    phiOscillator.disconnect();
+    phiOscillator = null;
+
+    isOscillatorRunning = false; // Reset the running flag
+}
 
 // Start and Stop Buttons
 const startButton = document.getElementById('startButton');
@@ -45,11 +68,11 @@ const stopButton = document.getElementById('stopButton');
 
 startButton.addEventListener('click', () => {
     audioContext.resume();
-    phiOscillator.connect(audioContext.destination);
+    startPhiOscillator();
 });
 
 stopButton.addEventListener('click', () => {
-    phiOscillator.disconnect(audioContext.destination);
+    stopPhiOscillator();
 });
 
 // Frequency Control
